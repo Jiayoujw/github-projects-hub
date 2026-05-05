@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { adminApi } from '@/api'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const keyword = ref('')
 const page = ref(1)
@@ -90,6 +90,15 @@ function editRole(row: any) {
 }
 
 async function saveRole() {
+  try {
+    await ElMessageBox.confirm(
+      `确认将该用户角色修改为"${selectedRole.value}"吗？`,
+      '确认修改',
+      { type: 'warning' },
+    )
+  } catch {
+    return
+  }
   await adminApi.updateUserRole(editingUserId.value, selectedRole.value)
   ElMessage.success('角色已更新')
   roleDialog.value = false

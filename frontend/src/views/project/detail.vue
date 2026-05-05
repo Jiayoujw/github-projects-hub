@@ -264,7 +264,9 @@ async function loadProject() {
       projectApi.getRelated(id).catch(() => ({ data: { data: [] } })),
     ])
     project.value = projRes.data.data
-    userApi.recordView(id).catch(() => {})
+    if (userStore.token) {
+      userApi.recordView(id).catch(() => {})
+    }
     const readmeData = readmeRes.data.data
     if (readmeData?.readmeHtml) {
       readmeHtml.value = DOMPurify.sanitize(readmeData.readmeHtml, { ADD_ATTR: ['target', 'rel'] })

@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { adminApi } from '@/api'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const page = ref(1)
 const pageSize = 20
@@ -54,6 +54,15 @@ async function fetchData() {
 }
 
 async function review(id: string, approved: boolean) {
+  try {
+    await ElMessageBox.confirm(
+      approved ? '确认通过该项目的收录申请？' : '确认拒绝该项目的收录申请？',
+      '审核确认',
+      { type: 'warning' },
+    )
+  } catch {
+    return
+  }
   await adminApi.reviewProject(id, approved)
   ElMessage.success(approved ? '已通过' : '已拒绝')
   fetchData()
