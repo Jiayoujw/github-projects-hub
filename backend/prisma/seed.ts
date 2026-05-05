@@ -1,29 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import 'dotenv/config';
 
-function parseDbUrl(url: string) {
-  const u = new URL(url);
-  return {
-    host: u.hostname,
-    port: parseInt(u.port || '3306'),
-    user: u.username,
-    password: u.password,
-    database: u.pathname.slice(1),
-  };
-}
-
-const dbConfig = parseDbUrl(process.env.DATABASE_URL!);
-const adapter = new PrismaMariaDb({
-  host: dbConfig.host,
-  port: dbConfig.port,
-  user: dbConfig.user,
-  password: dbConfig.password,
-  database: dbConfig.database,
-  connectionLimit: 5,
-});
-
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
