@@ -9,18 +9,11 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async health() {
-    let dbStatus = 'ok';
-    try {
-      await this.prisma.$queryRawUnsafe('SELECT 1');
-    } catch {
-      dbStatus = 'error';
-    }
+  health() {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      database: dbStatus,
     };
   }
 }
