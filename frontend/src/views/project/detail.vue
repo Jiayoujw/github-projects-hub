@@ -211,12 +211,18 @@ import { projectApi, commentApi, reviewApi, trendingApi, userApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import type { Project } from '@/types'
-import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { loadECharts } from '@/utils/echarts'
 import { fmtNum, usageLabel, scenarioType, techColors } from '@/utils/format'
 
-const md = new MarkdownIt({ html: false, linkify: true })
+let mdInstance: any = null
+async function getMd() {
+  if (!mdInstance) {
+    const MarkdownIt = (await import('markdown-it')).default
+    mdInstance = new MarkdownIt({ html: false, linkify: true })
+  }
+  return mdInstance
+}
 
 const techStack = computed(() => {
   const stats = project.value?.languageStats
@@ -310,6 +316,7 @@ async function loadProject() {
     if (readmeData?.readmeHtml) {
       readmeHtml.value = DOMPurify.sanitize(readmeData.readmeHtml, { ADD_ATTR: ['target', 'rel'] })
     } else if (readmeData?.readmeContent) {
+      const md = await getMd()
       const rendered = md.render(readmeData.readmeContent)
       readmeMarkdown.value = DOMPurify.sanitize(rendered, { ADD_ATTR: ['target', 'rel'] })
     }

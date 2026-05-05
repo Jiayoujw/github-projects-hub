@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: github-hub-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && npx prisma generate && pnpm run build
+    startCommand: npx prisma migrate deploy && node dist/main
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CALLBACK_URL
+        sync: false
+      - key: GITHUB_TOKENS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

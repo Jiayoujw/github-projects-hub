@@ -6,7 +6,7 @@
     </div>
 
     <!-- Project Selector -->
-    <div class="flex flex-wrap items-center gap-4 mb-8">
+    <div class="flex flex-wrap items-center gap-2 md:gap-4 mb-8">
       <div v-for="(p, i) in compareList" :key="i" class="relative">
         <el-select
           :model-value="p?.id || ''"
@@ -14,7 +14,7 @@
           remote
           :remote-method="(q: string) => searchProjects(q, i)"
           placeholder="搜索项目..."
-          class="w-64"
+          class="w-44 md:w-64"
           @change="(v: string) => selectProject(v, i)"
         >
           <el-option
@@ -38,7 +38,7 @@
     <!-- Comparison Results -->
     <div v-if="results.length >= 2" v-loading="comparing">
       <!-- Stat Cards Grid -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-8">
         <div v-for="stat in statFields" :key="stat.key" class="border rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
           <div class="text-xs text-gray-400 mb-2">{{ stat.label }}</div>
           <div v-for="(r, ri) in results" :key="ri" class="flex items-center justify-between py-1" :class="{ 'border-t border-gray-100 dark:border-gray-700': ri > 0 }">
