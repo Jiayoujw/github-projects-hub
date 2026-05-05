@@ -82,6 +82,24 @@
       </div>
     </div>
 
+    <!-- Recently Viewed -->
+    <div v-if="recentProjects.length" class="mb-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">🕐 最近浏览</h2>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div
+          v-for="p in recentProjects"
+          :key="p.id"
+          class="border rounded-xl px-3 py-3 cursor-pointer hover:border-blue-400 hover:shadow transition-all bg-white dark:bg-gray-800"
+          @click="$router.push(`/project/${p.id}`)"
+        >
+          <div class="text-sm font-medium truncate" :title="p.name">{{ p.name }}</div>
+          <div class="text-xs text-gray-400 truncate mt-1" :title="p.fullName">{{ p.fullName }}</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Latest Submitted -->
     <div v-if="latestProjects.length" class="mb-12">
       <div class="flex items-center justify-between mb-6">
@@ -112,6 +130,7 @@ const dLoading = ref(true)
 const wLoading = ref(true)
 const categories = ref<any[]>([])
 const stats = ref<any>(null)
+const recentProjects = ref<{ id: string; name: string; fullName: string }[]>([])
 
 const statsCards = computed(() => {
   const s = stats.value
@@ -138,6 +157,9 @@ onMounted(async () => {
     categories.value = (catRes.data.data || []).slice(0, 10)
     stats.value = analyticsRes.data.data?.overview || null
     latestProjects.value = latestRes.data.data?.items || []
+    try {
+      recentProjects.value = JSON.parse(localStorage.getItem('recentProjects') || '[]')
+    } catch { /* ignore */ }
   } finally {
     dLoading.value = false
     wLoading.value = false

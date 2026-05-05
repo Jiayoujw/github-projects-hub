@@ -36,6 +36,9 @@
           ☰
         </button>
         <span class="text-sm text-gray-500 flex-1">管理员: {{ userStore.user?.username }}</span>
+        <button class="text-sm px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700" @click="toggleDark">
+          {{ isDark ? '☀️' : '🌙' }}
+        </button>
       </header>
       <main class="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-900 overflow-auto">
         <router-view />
@@ -45,11 +48,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 const sidebarOpen = ref(false)
+const isDark = ref(false)
+
+onMounted(() => {
+  const stored = localStorage.getItem('theme')
+  if (stored) {
+    isDark.value = stored === 'dark'
+  } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    isDark.value = true
+  }
+  document.documentElement.classList.toggle('dark', isDark.value)
+})
+
+function toggleDark() {
+  isDark.value = !isDark.value
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 
 const navItems = [
   { to: '/admin/dashboard', label: '仪表盘' },

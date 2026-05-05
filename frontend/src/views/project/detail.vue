@@ -1,5 +1,6 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 py-6" v-loading="loading">
+  <div class="max-w-6xl mx-auto px-4 py-6 flex gap-8" v-loading="loading">
+    <div class="flex-1 min-w-0">
     <template v-if="project">
       <!-- Header -->
       <div class="mb-8">
@@ -172,6 +173,23 @@
         </div>
       </el-card>
     </template>
+    </div>
+
+    <!-- README TOC sidebar -->
+    <aside v-if="tocItems.length > 0" class="hidden xl:block w-52 flex-shrink-0">
+      <nav class="sticky top-20">
+        <h4 class="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">目录</h4>
+        <ul class="space-y-1.5">
+          <li v-for="item in tocItems" :key="item.id">
+            <a
+              :href="`#${item.id}`"
+              class="block text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 no-underline transition-colors truncate"
+              :style="{ paddingLeft: (item.level - 1) * 12 + 'px' }"
+            >{{ item.text }}</a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
   </div>
 </template>
 
@@ -206,6 +224,7 @@ const userStore = useUserStore()
 const project = ref<Project | null>(null)
 const readmeHtml = ref<string | null>(null)
 const readmeMarkdown = ref<string | null>(null)
+const tocItems = ref<{ id: string; text: string; level: number }[]>([])
 const related = ref<Project[]>([])
 const loading = ref(true)
 
@@ -267,12 +286,24 @@ async function loadProject() {
     if (userStore.token) {
       userApi.recordView(id).catch(() => {})
     }
+    // Save to recently viewed (localStorage, max 10)
+    try {
+      const p = project.value
+      const recent: { id: string; name: string; fullName: string }[] = JSON.parse(localStorage.getItem('recentProjects') || '[]')
+      const filtered = recent.filter(r => r.id !== p.id)
+      filtered.unshift({ id: p.id, name: p.name, fullName: p.fullName })
+      localStorage.setItem('recentProjects', JSON.stringify(filtered.slice(0, 10)))
+    } catch { /* ignore */ }
     const readmeData = readmeRes.data.data
     if (readmeData?.readmeHtml) {
       readmeHtml.value = DOMPurify.sanitize(readmeData.readmeHtml, { ADD_ATTR: ['target', 'rel'] })
     } else if (readmeData?.readmeContent) {
       const rendered = md.render(readmeData.readmeContent)
       readmeMarkdown.value = DOMPurify.sanitize(rendered, { ADD_ATTR: ['target', 'rel'] })
+    }
+    if (readmeHtml.value || readmeMarkdown.value) {
+      await nextTick()
+      buildToc()
     }
     comments.value = commentRes.data.data || []
     reviews.value = reviewRes.data.data || []
@@ -328,6 +359,20 @@ async function submitReview() {
   } finally {
     submittingReview.value = false
   }
+}
+
+function buildToc() {
+  const container = document.querySelector('.markdown-body')
+  if (!container) return
+  const headings = container.querySelectorAll('h1, h2, h3')
+  const items: { id: string; text: string; level: number }[] = []
+  headings.forEach((h) => {
+    const text = h.textContent || ''
+    const id = text.toLowerCase().replace(/[^\w一-鿿]+/g, '-').replace(/(^-|-$)/g, '')
+    h.id = id
+    items.push({ id, text, level: parseInt(h.tagName[1]) })
+  })
+  tocItems.value = items
 }
 
 async function renderChart() {
