@@ -1,7 +1,31 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import 'dotenv/config';
 
-const prisma = new PrismaClient();
+function parseDbUrl(url: string) {
+  const u = new URL(url);
+  return {
+    host: u.hostname,
+    port: parseInt(u.port || '3306'),
+    user: u.username,
+    password: u.password,
+    database: u.pathname.slice(1),
+    ssl: u.searchParams.has('ssl-mode') || !['localhost', '127.0.0.1'].includes(u.hostname),
+  };
+}
+
+const dbConfig = parseDbUrl(process.env.DATABASE_URL!);
+const adapter = new PrismaMariaDb({
+  host: dbConfig.host,
+  port: dbConfig.port,
+  user: dbConfig.user,
+  password: dbConfig.password,
+  database: dbConfig.database,
+  connectionLimit: 5,
+  ssl: dbConfig.ssl ? { rejectUnauthorized: false } : undefined,
+});
+
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('Seeding database...');
