@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     rootDir: backend
-    buildCommand: npm install -g pnpm@latest && pnpm install --frozen-lockfile && npx prisma generate && pnpm run build
+    buildCommand: corepack enable && corepack prepare pnpm@latest --activate && pnpm install --frozen-lockfile && npx prisma generate && pnpm run build
     startCommand: sh -c "(npx prisma migrate deploy || true) & node dist/main"
     healthCheckPath: /api/v1/health
     envVars:
