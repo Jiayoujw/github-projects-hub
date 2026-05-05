@@ -81,6 +81,9 @@
                     <el-input v-model="colEditNote" type="textarea" :rows="3" placeholder="添加备注..." size="small" />
                     <el-button size="small" type="primary" class="mt-2 w-full" @click="updateNote(col.id, colEditNote); colEditNote = ''">保存</el-button>
                   </el-popover>
+                  <el-button size="small" text class="text-gray-400 hover:text-green-500" title="分享" @click="shareCollection(col.id)">
+                    🔗
+                  </el-button>
                   <el-popconfirm title="确定删除该收藏？" @confirm="deleteCol(col.id)">
                     <template #reference>
                       <el-button size="small" text class="text-gray-400 hover:text-red-500">🗑</el-button>
@@ -303,6 +306,14 @@ async function updateNote(collectionId: string, note: string) {
   } catch {
     ElMessage.error('备注更新失败')
   }
+}
+
+function shareCollection(id: string) {
+  const url = `${window.location.origin}/share/collection/${id}`
+  navigator.clipboard.writeText(url).then(
+    () => ElMessage.success('分享链接已复制到剪贴板'),
+    () => ElMessage.warning('复制失败，请手动复制: ' + url),
+  )
 }
 
 async function deleteCol(id: string) {

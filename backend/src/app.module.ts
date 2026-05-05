@@ -13,6 +13,7 @@ import { ReviewModule } from './modules/review/review.module';
 import { TrendingModule } from './modules/trending/trending.module';
 import { CrawlerModule } from './modules/crawler/crawler.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { SharedModule } from './modules/shared/shared.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AllExceptionFilter } from './common/filters/all-exception.filter';
@@ -33,6 +34,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     TrendingModule,
     CrawlerModule,
     AdminModule,
+    SharedModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

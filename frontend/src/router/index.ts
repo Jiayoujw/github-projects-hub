@@ -66,6 +66,11 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/share/collection/:id',
+      name: 'shared-collection',
+      component: () => import('@/views/shared/CollectionView.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/views/NotFound.vue'),

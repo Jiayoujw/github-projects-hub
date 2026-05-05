@@ -28,11 +28,22 @@
         </div>
       </div>
 
-      <!-- Trend Chart -->
+      <!-- Star History Chart -->
       <el-card class="mb-6">
-        <template #header><span class="font-semibold">趋势数据 (近30天)</span></template>
-        <div v-if="trendData.length > 0" ref="chartRef" class="w-full h-72" />
-        <div v-else class="text-center py-10 text-gray-400">暂无趋势数据</div>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">📈 Star 增长历史</span>
+            <el-radio-group v-model="chartMode" size="small" @change="renderChart">
+              <el-radio-button value="area">面积</el-radio-button>
+              <el-radio-button value="line">折线</el-radio-button>
+            </el-radio-group>
+          </div>
+        </template>
+        <div v-if="trendData.length > 0" ref="chartRef" class="w-full h-80" />
+        <div v-else class="text-center py-16 text-gray-400">
+          <div class="text-3xl mb-3">📊</div>
+          <p>暂无历史数据，采集运行后将自动生成</p>
+        </div>
       </el-card>
 
       <!-- Tech Stack -->
@@ -225,6 +236,7 @@ const project = ref<Project | null>(null)
 const readmeHtml = ref<string | null>(null)
 const readmeMarkdown = ref<string | null>(null)
 const tocItems = ref<{ id: string; text: string; level: number }[]>([])
+const chartMode = ref<'area' | 'line'>('area')
 const related = ref<Project[]>([])
 const loading = ref(true)
 
@@ -381,22 +393,33 @@ async function renderChart() {
   if (chartInstance) chartInstance.dispose()
   chartInstance = echarts.init(chartRef.value)
   const dates = trendData.value.map((d: any) => d.snapshotDate?.slice(0, 10))
+  const isArea = chartMode.value === 'area'
   chartInstance.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['Stars', 'Forks'], bottom: 0 },
-    grid: { left: '3%', right: '4%', top: 10, bottom: 30 },
-    xAxis: { type: 'category', data: dates, axisLabel: { rotate: 30, fontSize: 10 } },
-    yAxis: { type: 'value' },
+    legend: { data: ['Stars', 'Forks'], bottom: 0, textStyle: { fontSize: 12 } },
+    grid: { left: '5%', right: '5%', top: 10, bottom: 30 },
+    xAxis: { type: 'category', data: dates, axisLabel: { rotate: 30, fontSize: 10 }, boundaryGap: false },
+    yAxis: { type: 'value', axisLabel: { formatter: (v: number) => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v } },
     series: [
       {
         name: 'Stars', type: 'line', smooth: true,
         data: trendData.value.map((d: any) => d.stars),
-        itemStyle: { color: '#e6a23c' },
+        symbol: 'none',
+        lineStyle: { color: '#f5a623', width: 2 },
+        areaStyle: isArea ? { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(245,166,35,0.35)' },
+          { offset: 1, color: 'rgba(245,166,35,0.02)' },
+        ]) } : undefined,
       },
       {
         name: 'Forks', type: 'line', smooth: true,
         data: trendData.value.map((d: any) => d.forks),
-        itemStyle: { color: '#409eff' },
+        symbol: 'none',
+        lineStyle: { color: '#5b8def', width: 2 },
+        areaStyle: isArea ? { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(91,141,239,0.3)' },
+          { offset: 1, color: 'rgba(91,141,239,0.02)' },
+        ]) } : undefined,
       },
     ],
   })

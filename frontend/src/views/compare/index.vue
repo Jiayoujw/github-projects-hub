@@ -48,9 +48,15 @@
         </div>
       </div>
 
+      <!-- Radar Chart -->
+      <el-card class="mb-8" shadow="hover">
+        <template #header><span class="font-semibold">🎯 多维度雷达对比</span></template>
+        <div ref="radarChartRef" class="h-80" />
+      </el-card>
+
       <!-- Trend Chart -->
       <el-card class="mb-8" shadow="hover">
-        <template #header><span class="font-semibold">Star 趋势对比（近 30 天）</span></template>
+        <template #header><span class="font-semibold">📈 Star 趋势对比</span></template>
         <div ref="trendChartRef" class="h-80" />
       </el-card>
 
@@ -102,7 +108,9 @@ const searchResults = ref<Record<number, any[]>>({ 0: [], 1: [], 2: [], 3: [] })
 const results = ref<any[]>([])
 const comparing = ref(false)
 const trendChartRef = ref<HTMLElement | null>(null)
+const radarChartRef = ref<HTMLElement | null>(null)
 let trendChart: any = null
+let radarChart: any = null
 
 const statFields = [
   { key: 'stars', label: '⭐ Stars', fmt: (v: number) => fmtNum(v) },
@@ -146,6 +154,7 @@ async function doCompare() {
     // Fetch trends for each
     const trends = await Promise.all(ids.map(id => trendingApi.projectTrend(id).catch(() => ({ data: { data: [] } }))))
     await nextTick()
+    renderRadarChart()
     if (trendChartRef.value) {
       const echarts = await loadECharts()
       if (trendChart) trendChart.dispose()
@@ -171,6 +180,47 @@ async function doCompare() {
   }
 }
 
+async function renderRadarChart() {
+  if (!radarChartRef.value || results.value.length < 2) return
+  const echarts = await loadECharts()
+  if (radarChart) radarChart.dispose()
+  radarChart = echarts.init(radarChartRef.value)
+
+  // Normalize values to 0-100 scale for radar comparison
+  const dims = ['stars', 'forks', 'watchers', 'openIssues', 'contributorCount']
+  const dimLabels = ['Stars', 'Forks', 'Watchers', 'Issues', '贡献者']
+  const maxValues = dims.map(d => Math.max(...results.value.map(r => r[d] || 0), 1))
+
+  radarChart.setOption({
+    tooltip: {},
+    legend: { data: results.value.map(r => r.name), bottom: 0, textStyle: { fontSize: 11 } },
+    radar: {
+      indicator: dimLabels.map((label) => ({
+        name: label,
+        max: 100,
+      })),
+      center: ['50%', '48%'],
+      radius: '65%',
+    },
+    series: [{
+      type: 'radar',
+      data: results.value.map((r, i) => ({
+        name: r.name,
+        value: dims.map((d, di) => {
+          const raw = r[d] || 0
+          const max = maxValues[di]
+          return max ? Math.min((raw / max) * 100, 100) : 0
+        }),
+        lineStyle: { color: colorPalette[i], width: 2 },
+        areaStyle: { color: colorPalette[i], opacity: 0.1 },
+        itemStyle: { color: colorPalette[i] },
+        symbol: 'circle',
+        symbolSize: 4,
+      })),
+    }],
+  })
+}
+
 onMounted(async () => {
   const idsParam = route.query.ids as string
   if (idsParam) {
@@ -180,6 +230,8 @@ onMounted(async () => {
       try {
         const details = await Promise.all(ids.map(id => projectApi.getProject(id)))
         results.value = details.map(d => d.data.data).filter(Boolean)
+        await nextTick()
+        renderRadarChart()
         for (let i = 0; i < results.value.length; i++) {
           compareList.value[i] = { id: results.value[i].id, fullName: results.value[i].fullName }
         }
@@ -190,5 +242,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (trendChart) trendChart.dispose()
+  if (radarChart) radarChart.dispose()
 })
 </script>
