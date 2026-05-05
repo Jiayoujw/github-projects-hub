@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ==================== 角色 ====================
+model Role {
+  id          String   @id @default(uuid()) @db.Char(36)
+  name        String   @unique @db.VarChar(32)
+  description String?  @db.VarChar(255)
+  permissions Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+
+  @@map("roles")
+}
+
+// ==================== 用户 ====================
+model User {
+  id           String       @id @default(uuid()) @db.Char(36)
+  githubId     BigInt?      @unique @map("github_id")
+  username     String       @unique @db.VarChar(64)
+  email        String?      @unique @db.VarChar(255)
+  passwordHash String?      @db.VarChar(255) @map("password_hash")
+  avatarUrl    String?      @db.VarChar(512) @map("avatar_url")
+  bio          String?      @db.Text
+  roleId       String?      @db.Char(36) @map("role_id")
+  preferences  Json         @default("{}")
+  lastLoginAt  DateTime?    @map("last_login_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  role         Role?        @relation(fields: [roleId], references: [id])
+  collections   Collection[]
+  reviews       Review[]
+  comments      Comment[]
+  viewHistory   ViewHistory[]
+  subscriptions Subscription[]
+  notifications Notification[]
+
+  @@index([roleId])
+  @@index([email])
+  @@map("users")
+}
+
+// ==================== 分类 ====================
+model Category {
+  id          String     @id @default(uuid()) @db.Char(36)
+  name        String     @db.VarChar(64)
+  slug        String     @unique @db.VarChar(64)
+  description String?    @db.Text
+  icon        String?    @db.VarChar(64)
+  parentId    String?    @db.Char(36) @map("parent_id")
+  sortOrder   Int        @default(0) @map("sort_order")
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  projects    Project[]
+
+  @@index([parentId])
+  @@index([slug])
+  @@map("categories")
+}
+
+// ==================== 标签 ====================
+model Tag {
+  id         String       @id @default(uuid()) @db.Char(36)
+  name       String       @unique @db.VarChar(64)
+  slug       String       @unique @db.VarChar(64)
+  usageCount Int          @default(0) @map("usage_count")
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  projects   ProjectTag[]
+
+  @@map("tags")
+}
+
+// ==================== 项目 ====================
+model Project {
+  id               String       @id @default(uuid()) @db.Char(36)
+  githubId         BigInt       @unique @map("github_id")
+  fullName         String       @db.VarChar(255) @map("full_name")
+  name             String       @db.VarChar(128)
+  description      String?      @db.Text
+  homepageUrl      String?      @db.VarChar(512) @map("homepage_url")
+  htmlUrl          String       @db.VarChar(512) @map("html_url")
+  stars            Int          @default(0)
+  forks            Int          @default(0)
+  watchers         Int          @default(0)
+  openIssues       Int          @default(0) @map("open_issues")
+  primaryLanguage  String?      @db.VarChar(64) @map("primary_language")
+  languageStats    Json?        @map("language_stats")
+  license          String?      @db.VarChar(64)
+  topics           Json         @default("[]")
+  readmeContent    String?      @db.LongText @map("readme_content")
+  readmeHtml       String?      @db.LongText @map("readme_html")
+  contributorCount Int          @default(0) @map("contributor_count")
+  githubCreatedAt  DateTime?    @map("github_created_at")
+  githubUpdatedAt  DateTime?    @map("github_updated_at")
+  pushedAt         DateTime?    @map("pushed_at")
+  isArchived       Boolean      @default(false) @map("is_archived")
+  isFork           Boolean      @default(false) @map("is_fork")
+  status           String       @default("active") @db.VarChar(20)
+  source           String       @default("api") @db.VarChar(20)
+  avgRating        Decimal?     @db.Decimal(2, 1) @map("avg_rating")
+  reviewCount      Int          @default(0) @map("review_count")
+  categoryId       String?      @db.Char(36) @map("category_id")
+  viewCount        Int          @default(0) @map("view_count")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  category         Category?    @relation(fields: [categoryId], references: [id])
+  tags             ProjectTag[]
+  collections      Collection[]
+  reviews          Review[]
+  comments         Comment[]
+  snapshots        ProjectSnapshot[]
+  viewHistory      ViewHistory[]
+
+  @@index([stars])
+  @@index([primaryLanguage])
+  @@index([status])
+  @@index([categoryId])
+  @@index([fullName])
+  @@index([name])
+  @@index([pushedAt])
+  @@index([githubCreatedAt])
+  @@map("projects")
+}
+
+// ==================== 项目-标签关联 ====================
+model ProjectTag {
+  projectId  String   @db.Char(36) @map("project_id")
+  tagId      String   @db.Char(36) @map("tag_id")
+  source     String   @default("github") @db.VarChar(20)
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+  @@index([tagId])
+  @@map("project_tags")
+}
+
+// ==================== 收藏 ====================
+model Collection {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @db.Char(36) @map("user_id")
+  projectId String   @db.Char(36) @map("project_id")
+  groupName String?  @default("默认收藏夹") @db.VarChar(64) @map("group_name")
+  note      String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@index([projectId])
+  @@map("collections")
+}
+
+// ==================== 评价 ====================
+model Review {
+  id            String   @id @default(uuid()) @db.Char(36)
+  userId        String   @db.Char(36) @map("user_id")
+  projectId     String   @db.Char(36) @map("project_id")
+  rating        Int      @db.TinyInt
+  title         String?  @db.VarChar(255)
+  content       String?  @db.Text
+  usageScenario String?  @db.VarChar(20) @map("usage_scenario")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+// ==================== 评论 ====================
+model Comment {
+  id        String    @id @default(uuid()) @db.Char(36)
+  userId    String    @db.Char(36) @map("user_id")
+  projectId String    @db.Char(36) @map("project_id")
+  parentId  String?   @db.Char(36) @map("parent_id")
+  content   String    @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  @@index([projectId])
+  @@index([parentId])
+  @@index([userId])
+  @@map("comments")
+}
+
+// ==================== 浏览历史 ====================
+model ViewHistory {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @db.Char(36) @map("user_id")
+  projectId String   @db.Char(36) @map("project_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([projectId])
+  @@map("view_history")
+}
+
+// ==================== 订阅 ====================
+model Subscription {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @db.Char(36) @map("user_id")
+  type      String   @db.VarChar(20)
+  value     String   @db.VarChar(128)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, value])
+  @@index([userId])
+  @@index([enabled, type, value])
+  @@map("subscriptions")
+}
+
+// ==================== 通知 ====================
+model Notification {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @db.Char(36) @map("user_id")
+  type      String   @db.VarChar(32)
+  title     String   @db.VarChar(255)
+  content   String?  @db.Text
+  link      String?  @db.VarChar(512)
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ==================== 项目快照 ====================
+model ProjectSnapshot {
+  id           String   @id @default(uuid()) @db.Char(36)
+  projectId    String   @db.Char(36) @map("project_id")
+  stars        Int
+  forks        Int
+  openIssues   Int      @map("open_issues")
+  snapshotDate DateTime @db.Date @map("snapshot_date")
+
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, snapshotDate])
+  @@index([projectId])
+  @@index([snapshotDate])
+  @@map("project_snapshots")
+}

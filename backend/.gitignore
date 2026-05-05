@@ -1,0 +1,8 @@
+node_modules
+dist
+*.tsbuildinfo
+# 保持 .env 不进入版本控制
+.env
+/.env
+# Prisma 生成文件
+/generated/prisma
