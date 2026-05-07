@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/echarts-BiNUwD1K.js","assets/chunk-CilyBKbf.js"])))=>i.map(i=>d[i]);
+import{t as e}from"./index-DDBeiJ6V.js";var t=null,n=null;async function r(){return t||(n||=e(()=>import(`./echarts-BiNUwD1K.js`).then(e=>(t=e,e)),__vite__mapDeps([0,1])),n)}export{r as t};
